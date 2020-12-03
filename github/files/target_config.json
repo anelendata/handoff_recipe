@@ -1,0 +1,6 @@
+{
+    "project_id": "my-bq-data-warehouse",
+    "dataset_id": "{{ _stage_ }}github_2020xxxx",
+    "stream": false
+}
+

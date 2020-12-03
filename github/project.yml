@@ -1,0 +1,114 @@
+version: 0.3.0
+
+installs:
+- venv: proc_01
+  command: pip install tap-rest-api
+- venv: proc_01
+  command: pip install PyYAML
+- venv: proc_02
+  command: pip install tap-github
+- venv: proc_03
+  command: pip install --no-cache-dir https://github.com/anelendata/target-bigquery/archive/eb3c2425445dd387d88b7da12dc0e47d32fd70c7.tar.gz#egg=target-bigquery
+
+envs:
+- key: GOOGLE_APPLICATION_CREDENTIALS
+  value: files/google_client_secret.json  # value is retrieved from secure parameter store
+
+vars:
+- key: historical_sync_start_at
+  value: "1970-01-01T00:00:00Z"
+
+pipelines:
+- name: make_tap_rest_api_schema
+  description: Update schema and catalog for tap-rest-api to pull repos
+  active: False  # Need to run only once locally to populate <project_dir>/flies
+  group:  # We can group multiple pipelines to manage
+    - name: infer_repo_schema
+      pipeline:
+      - command: tap-rest-api
+        args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+        venv: proc_01
+    - name: copy_repo_schema_to_project
+      pipeline:
+      - command: cp
+        args: "files/schema/* ../files/schema"
+    - name: copy_repo_catalog_to_project
+      pipeline:
+      - command: cp
+        args: "files/catalog/* ../files/catalog"
+
+- name: generate_tap_github_config_and_state
+  description: Generate tap-github config files per repo. Creates state file per repo if not exist in artifacts directory. These 3 commands are piped like: tap-rest_api | python ... | cat ...
+  pipeline:
+  - command: tap-rest-api
+    args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog files/catalog/repository.json"
+    venv: proc_01
+  - command: python
+    description: "{{ token }} is defined in .secret/secret.yml."
+    args: "files/transformer/tap_config_github.py {{ token }} files/tables.yml {{ historical_sync_start_at }} files/tap_github_config artifacts/state"
+    venv: proc_01
+  - command: cat
+    description: Save the list of repo full names (org/repo)
+    args: "> files/repos.txt"
+
+- name: tap-github_discover_mode
+  description: "Generate properties.json file for https://github.com/singer-io/tap-github"
+  active: False  # Need to run only once locally to populate <project_dir>/flies
+  pipeline:
+  - command: head
+    description: Get the first repo full name as we only need data from 1 repo to make the schema
+    args: "-n 1 ./files/repos.txt" 
+  - foreach:
+    - name: generate_properties
+      pipeline:
+      - command: tap-github
+        args: "--config files/tap_github_config_{{ _stdin }}.json --discover"
+        venv: proc_02
+      - command: cat
+        args: "> files/properties.json"
+    - name: activate_properties
+      description: Mark the tables of interst with select=True
+      pipeline:
+      - command: python
+        args: "files/transformer/properties.py files/properties.json ../files/properties.json files/tables.yml"
+        venv: proc_01
+
+- name: sync_all_repos
+  description: Do the sync. It goes repo by repo to ensure sync completion happens 1 repo at a time just in case of GitHub rate limit. It leaves state files per repo so the sync becomes incremental once the historical sync completes.
+  pipeline:
+  - command: cat
+    args: "./files/repos.txt"
+    # foreach creates an independent pipeline per stdin chunk and loop through...
+  - foreach:
+    - name: sync
+      pipeline:
+      - command: tap-github
+        args: "--config files/tap_github_config_{{ _stdin }}.json --properties files/properties.json --state artifacts/state_{{ _stdin }}.json"
+        venv: proc_02
+      - command: python
+        description: A transformation layer to clean up the output from tap-github but it may not be necessary.
+        args: "./files/transformer/records.py ./files/properties.json"
+        venv: proc_01
+      - command: target-bigquery
+        descriptoin: Upload to BigQuery. It adds _sdc_batched_at that indicates the data load timestamp
+        args: --config files/target_config.json
+        venv: proc_03
+    - name: copy_bookmark
+      description: stdout from tap-bigquery is the bookmark. Make sure we save it and use it for the next run.
+      pipeline:
+      - command: mv
+        args: artifacts/sync_{{ _stdin }}_stdout.log artifacts/state_{{ _stdin }}.json
+
+deploy:
+  provider: aws
+  platform: fargate
+  resource_group: handoff-etl
+  # Docker image name
+  container_image: github-bigquery-all-repos
+  # Fargate task name
+  task: github
+
+schedules:
+- target_id: "1"
+  description: Run every 4 hours
+  cron: '0 */4 * * ? *'
