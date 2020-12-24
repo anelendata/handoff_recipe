@@ -1,14 +1,16 @@
 version: 0.3.0
 
+description: Replicate GitHub data from all repos in the account to BigQuery
+
 installs:
 - venv: proc_01
-  command: pip install tap-rest-api
+  command: pip install --no-cache-dir tap-rest-api
 - venv: proc_01
   command: pip install PyYAML
 - venv: proc_02
   command: pip install --no-cache-dir https://github.com/anelendata/tap-github/archive/ba8a1465ed85458cf072f9aeee0247ac16b161cf.tar.gz#egg=tap-github
 - venv: proc_03
-  command: pip install --no-cache-dir https://github.com/anelendata/target-bigquery/archive/eb3c2425445dd387d88b7da12dc0e47d32fd70c7.tar.gz#egg=target-bigquery
+  command: pip install --no-cache-dir https://github.com/anelendata/target-bigquery/archive/71b51aa8128d7b50a8155f6d9974308cd1d4c2d4.tar.gz#egg=target-bigquery
 
 envs:
 - key: GOOGLE_APPLICATION_CREDENTIALS
@@ -18,24 +20,18 @@ vars:
 - key: historical_sync_start_at
   value: "1970-01-01T00:00:00Z"
 
-pipelines:
+tasks:
 - name: make_tap_rest_api_schema
   description: Update schema and catalog for tap-rest-api to pull repos
   active: False  # Need to run only once locally to populate <project_dir>/flies
-  group:  # We can group multiple pipelines to manage
-    - name: infer_repo_schema
-      pipeline:
-      - command: tap-rest-api
-        args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
-        venv: proc_01
-    - name: copy_repo_schema_to_project
-      pipeline:
-      - command: cp
-        args: "files/schema/* ../files/schema"
-    - name: copy_repo_catalog_to_project
-      pipeline:
-      - command: cp
-        args: "files/catalog/* ../files/catalog"
+  commands:
+  - command: tap-rest-api
+    args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+    venv: proc_01
+  - command: cp
+    args: "files/schema/*.json ../files/schema/"
+  - command: cp
+    args: "files/catalog/*.json ../files/catalog/"
 
 - name: generate_tap_github_config_and_state
   description: "Generate tap-github config files per repo. Creates state file per repo if not exist in artifacts directory. These 3 commands are piped like: tap-rest_api | python ... | cat ..."
@@ -78,18 +74,25 @@ pipelines:
   pipeline:
   - command: cat
     args: "./files/repos.txt"
-    # foreach creates an independent pipeline per stdin chunk and loop through...
+    # foreach creates independent tasks per stdin chunk and loop through...
   - foreach:
-    - name: sync
-      # run_downstream_on_fail: True  # Copy last valid state file
+    - name: extract
+      description: tap (extract) the data and write out to an intermediate file
       pipeline:
       - command: tap-github
         args: "--config files/tap_github_config_{{ _line }}.json --properties files/properties.json --state artifacts/state_{{ _line }}.json"
         venv: proc_02
       - command: python
         description: A transformation layer to clean up the output from tap-github but it may not be necessary.
-        args: "./files/transformer/records.py ./files/properties.json"
+        args: "files/transformer/records.py files/properties.json"
         venv: proc_01
+      - command: cat
+        args: "> files/records_{{ _line }}.json"
+    - name: load
+      description: Load the records only if tap completes successfully
+      pipeline:
+      - command: cat
+        args: files/records_{{ _line }}.json
       - command: target-bigquery
         descriptoin: Upload to BigQuery. It adds _sdc_batched_at that indicates the data load timestamp
         args: --config files/target_config.json
@@ -98,7 +101,7 @@ pipelines:
       description: stdout from tap-bigquery is the bookmark. Make sure we save it and use it for the next run.
       pipeline:
       - command: mv
-        args: artifacts/sync_{{ _line }}_stdout.log artifacts/state_{{ _line }}.json
+        args: artifacts/load_{{ _line }}_stdout.log artifacts/state_{{ _line }}.json
 
 deploy:
   provider: aws
@@ -111,5 +114,5 @@ deploy:
 
 schedules:
 - target_id: "1"
-  description: Run every 4 hours
-  cron: '0 */4 * * ? *'
+  description: Run every 8 hours
+  cron: '0 */8 * * ? *'
