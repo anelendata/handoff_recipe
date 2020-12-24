@@ -6,7 +6,7 @@ installs:
 - venv: proc_01
   command: pip install PyYAML
 - venv: proc_02
-  command: pip install tap-github
+  command: pip install --no-cache-dir https://github.com/anelendata/tap-github/archive/ba8a1465ed85458cf072f9aeee0247ac16b161cf.tar.gz#egg=tap-github
 - venv: proc_03
   command: pip install --no-cache-dir https://github.com/anelendata/target-bigquery/archive/eb3c2425445dd387d88b7da12dc0e47d32fd70c7.tar.gz#egg=target-bigquery
 
@@ -107,7 +107,7 @@ deploy:
   # Docker image name
   container_image: github-bigquery-all-repos
   # Fargate task name
-  task: github
+  task: github-bigquery-sync
 
 schedules:
 - target_id: "1"
