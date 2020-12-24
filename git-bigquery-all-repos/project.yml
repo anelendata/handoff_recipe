@@ -38,7 +38,7 @@ pipelines:
         args: "files/catalog/* ../files/catalog"
 
 - name: generate_tap_github_config_and_state
-  description: Generate tap-github config files per repo. Creates state file per repo if not exist in artifacts directory. These 3 commands are piped like: tap-rest_api | python ... | cat ...
+  description: "Generate tap-github config files per repo. Creates state file per repo if not exist in artifacts directory. These 3 commands are piped like: tap-rest_api | python ... | cat ..."
   pipeline:
   - command: tap-rest-api
     args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog files/catalog/repository.json"
@@ -49,7 +49,7 @@ pipelines:
     venv: proc_01
   - command: cat
     description: Save the list of repo full names (org/repo)
-    args: "> files/repos.txt"
+    args: "| sort | uniq > files/repos.txt"
 
 - name: tap-github_discover_mode
   description: "Generate properties.json file for https://github.com/singer-io/tap-github"
@@ -62,7 +62,7 @@ pipelines:
     - name: generate_properties
       pipeline:
       - command: tap-github
-        args: "--config files/tap_github_config_{{ _stdin }}.json --discover"
+        args: "--config files/tap_github_config_{{ _line }}.json --discover"
         venv: proc_02
       - command: cat
         args: "> files/properties.json"
@@ -81,9 +81,10 @@ pipelines:
     # foreach creates an independent pipeline per stdin chunk and loop through...
   - foreach:
     - name: sync
+      # run_downstream_on_fail: True  # Copy last valid state file
       pipeline:
       - command: tap-github
-        args: "--config files/tap_github_config_{{ _stdin }}.json --properties files/properties.json --state artifacts/state_{{ _stdin }}.json"
+        args: "--config files/tap_github_config_{{ _line }}.json --properties files/properties.json --state artifacts/state_{{ _line }}.json"
         venv: proc_02
       - command: python
         description: A transformation layer to clean up the output from tap-github but it may not be necessary.
@@ -97,7 +98,7 @@ pipelines:
       description: stdout from tap-bigquery is the bookmark. Make sure we save it and use it for the next run.
       pipeline:
       - command: mv
-        args: artifacts/sync_{{ _stdin }}_stdout.log artifacts/state_{{ _stdin }}.json
+        args: artifacts/sync_{{ _line }}_stdout.log artifacts/state_{{ _line }}.json
 
 deploy:
   provider: aws
