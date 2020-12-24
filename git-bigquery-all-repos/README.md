@@ -43,11 +43,14 @@ to run locally.
 Example deployment command sequence to AWS Fargate:
 
 ```
-handoff cloud create bucket -p . --stage prod
+export AWS_PROFILE=your-profile
+handof cloud create bucket --project . --stage prod
 handoff project push -p . -s prod
-handoff container build
-handoff container push
-handoff task create -p . -s prod
-handoff schedule -p . -s prod
+handoff container build -p .
+handoff container push -p .
+handoff cloud resources create -p . -s prod
+handoff cloud task create -p . -s prod
+handoff cloud run -p . -s prod  # Run now
+handoff cloud schedule -p . -s prod  # Schedule
 ```
 
