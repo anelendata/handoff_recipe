@@ -1,5 +1,5 @@
 {
-  "url": "https://api.github.com/orgs/{{ org_account }}/repos?per_page={items_per_page}&page={current_page}&sort=updated&direction=desc",
+  "url": "https://api.github.com/orgs/{{ org_account }}/repos?per_page={items_per_page}&page={current_page}&sort=updated&direction=asc",
   "schema": "repository",
   "auth_method": "no_auth",
   "index_key": "id",
