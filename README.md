@@ -1,6 +1,6 @@
 # handoff project collection
 
-A collection of [handoff](https://github.com/anelendata/handoff/tree/v0.3)'s example
+A collection of [handoff](https://github.com/anelendata/handoff)'s example
 projects.
 
 handoff version 0.3 has not been released yet. To try these recipes before the
