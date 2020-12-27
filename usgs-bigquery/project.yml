@@ -1,0 +1,50 @@
+version: 0.3
+description: Fetch the earth quake data from USGS.gov and store in BigQuery
+
+installs:
+- venv: proc_01
+  command: pip install tap-rest-api
+- venv: proc_02
+  command: "pip install install --no-cache-dir https://github.com/anelendata/target_bigquery/archive/94d0cf097de18d06be40ae5a35f5b31bda44f219.tar.gz#egg=target_bigquery"
+
+envs:
+- key: GOOGLE_APPLICATION_CREDENTIALS
+  value: files/google_client_secret.json
+
+tasks:
+- name: make_tap_rest_api_schema
+  description: Update schema and catalog for tap-rest-api to pull repos
+  active: False  # Need to run only once locally to populate <project_dir>/flies
+  commands:
+  - command: tap-rest-api
+    args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+    venv: proc_01
+  - command: cp
+    args: "files/schema/*.json ../files/schema/"
+  - command: cp
+    args: "files/catalog/*.json ../files/catalog/"
+
+- name: sync
+  description: Do the sync
+  pipeline:
+  - command: tap-rest-api
+    args: files/custom_spec.json --config files/tap_config.json --schema_dir files/schema --catalog_dir files/catalog --catalog files/catalog/earthquakes.json --start_datetime {{ start_datetime }} --end_datetime {{ end_datetime }}
+    venv: proc_01
+  - command: target_bigquery
+    args: --config files/target_config.json
+    venv: proc_02
+
+deploy:
+  cloud_provider: aws
+  cloud_platform: fargate
+  resource_group: handoff-etl
+  container_image: tap-rest-api-target-bigquery
+  task: usgs-earthquakes
+
+schedules:
+- target_id: "1"
+  description: Run everyday at 00:00:00Z
+  envs:
+  - key: __VARS
+    value: 'start_datetime=$(date -Iseconds -d "00:00 yesterday") end_datetime=$(date -Iseconds -d "00:00 today")'
+  cron: '0 20 5 * ? *'  # 5th day of the month 12pm PST
