@@ -1,0 +1,11 @@
+{
+  "period": "week",
+  "title": "Which stock was the best performer in the last {period}?",
+  "symbols": [
+    "FB",
+    "AAPL",
+    "NFLX",
+    "GOOG",
+    "MSFT"
+  ]
+}

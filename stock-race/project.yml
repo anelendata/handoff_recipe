@@ -1,0 +1,65 @@
+version: 0.3
+description: Create stock barchart race and post on Twitter
+
+installs:
+- venv: base
+  command: pip install tap-rest-api
+- venv: base
+  command: pip install tweepy
+- venv: base
+  command: pip install pandas
+- venv: base
+  command: pip install altair
+- venv: base
+  command: pip install altair_saver
+- venv: base
+  command: pip install pillow
+- venv: base
+  command: pip install imageio
+- venv: base
+  command: pip install tweepy
+- venv: base
+  command: pip install vega_datasets
+- venv: base
+  command: pip install moviepy
+
+tasks:
+- name: install
+  commands:
+  - venv: base
+    command: pip3
+    args: install yfinance
+  - venv: base
+    command: pip3
+    args: "install --no-cache https://github.com/anelendata/bar_chart_race/archive/7d69d5dad1fa67b3c0edb4b0ec2289d6b65f8858.tar.gz#egg=bar-chart-race"
+
+- name: make-gif
+  pipeline:
+  - venv: base
+    command: python
+    args: files/scripts/make_gif.py
+  - command: cat
+    args: "> artifacts/make_gif_stdout.log"
+
+- name: tweet
+  pipeline:
+  - command: python
+    venv: base
+    args: files/scripts/tweet.py
+  - command: cat
+    args: "> artifacts/tweet_stdout.log"
+
+deploy:
+  provider: aws
+  platform: fargate
+  resource_group: anelen-etl
+  # Docker image name
+  container_image: social-media-data-viz
+  # Fargate task name
+  task: "stock-barchart-race-weely"
+
+schedules:
+- target_id: "1"
+  description: Run every Monday at 12pm PST
+  envs: []
+  cron: '0 20 ? * 2 *'
