@@ -17,6 +17,10 @@ envs:
   value: files/google_client_secret.json  # value is retrieved from secure parameter store
 
 vars:
+- key: gcp_project_id
+  value: my-gcp-project-id  # Change me!
+- key: dataset_id
+  value: my-bigquery-dataset-id  # Change me!
 - key: historical_sync_start_at
   value: "1970-01-01T00:00:00Z"
 

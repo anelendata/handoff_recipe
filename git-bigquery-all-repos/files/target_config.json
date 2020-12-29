@@ -1,6 +1,6 @@
 {
-    "project_id": "my-bq-data-warehouse",
-    "dataset_id": "{{ _stage_ }}github_2020xxxx",
+    "project_id": "{{ gcp_project_id }}",
+    "dataset_id": "{{ _stage_ }}{{ dataset_id }}",
     "stream": false
 }
 

@@ -19,12 +19,12 @@ github/
 │   │   └── repository.json
 │   ├── tables.yml (review this)
 │   ├── tap_config_repo.json
-│   ├── target_config.json (edit this to set the destination dataset)
+│   ├── target_config.json
 │   └── transformer
 │       ├── properties.py
 │       ├── records.py
 │       └── tap_config_github.py
-├── project.yml (review this)
+├── project.yml (edit this)
 ├── README.md (this file)
 └── .secrets
     └── secrets.yml (edit this)
