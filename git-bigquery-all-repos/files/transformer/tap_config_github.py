@@ -38,13 +38,14 @@ def run(token, tables_yml, historical_sync_start_at, config_prefix, state_prefix
         else:
             state = {"bookmarks": {repo_name: {}}}
 
-        bookmarks = state["bookmarks"]
+        bookmarks = state["bookmarks"].get(repo_name, state["bookmarks"])
 
         for s in selected:
-            if not state["bookmarks"].get(s, {}).get("since"):
+            if not bookmarks.get(s, {}).get("since"):
                 bookmarks[s] = {"since": historical_sync_start_at}
 
-        state = {"bookmarks": bookmarks}
+        state = {"bookmarks": {repo_name: bookmarks}}
+
         with open(state_file, "w") as f:
             json.dump(state, f, indent=2)
 

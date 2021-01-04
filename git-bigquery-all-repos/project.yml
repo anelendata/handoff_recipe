@@ -62,7 +62,7 @@ tasks:
     - name: generate_properties
       pipeline:
       - command: tap-github
-        args: "--config files/tap_github_config_{{ _line }}.json --discover"
+        args: "--config files/tap_github_config_{{ _line_safe }}.json --discover"
         venv: proc_02
       - command: cat
         args: "> files/properties.json"
@@ -84,19 +84,19 @@ tasks:
       description: tap (extract) the data and write out to an intermediate file
       pipeline:
       - command: tap-github
-        args: "--config files/tap_github_config_{{ _line }}.json --properties files/properties.json --state artifacts/state_{{ _line }}.json"
+        args: "--config files/tap_github_config_{{ _line_safe }}.json --properties files/properties.json --state artifacts/state_{{ _line_safe }}.json"
         venv: proc_02
       - command: python
         description: A transformation layer to clean up the output from tap-github but it may not be necessary.
         args: "files/transformer/records.py files/properties.json"
         venv: proc_01
       - command: cat
-        args: "> files/records_{{ _line }}.json"
+        args: "> files/records_{{ _line_safe }}.json"
     - name: load
       description: Load the records only if tap completes successfully
       pipeline:
       - command: cat
-        args: files/records_{{ _line }}.json
+        args: files/records_{{ _line_safe }}.json
       - command: target-bigquery
         descriptoin: Upload to BigQuery. It adds _sdc_batched_at that indicates the data load timestamp
         args: --config files/target_config.json
@@ -105,14 +105,14 @@ tasks:
       description: stdout from tap-bigquery is the bookmark. Make sure we save it and use it for the next run.
       pipeline:
       - command: mv
-        args: artifacts/load_{{ _line }}_stdout.log artifacts/state_{{ _line }}.json
+        args: artifacts/load_{{ _line_safe }}_stdout.log artifacts/state_{{ _line_safe }}.json
 
 deploy:
   provider: aws
   platform: fargate
   resource_group: handoff-etl
   # Docker image name
-  container_image: github-bigquery-all-repos
+  container_image: tap-rests-api-tap-github-target-bigquery
   # Fargate task name
   task: github-bigquery-sync
 

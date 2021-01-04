@@ -24,7 +24,7 @@ github/
 │       ├── properties.py
 │       ├── records.py
 │       └── tap_config_github.py
-├── project.yml (edit this)
+├── project.yml (edit vars section)
 ├── README.md (this file)
 └── .secrets
     └── secrets.yml (edit this)
