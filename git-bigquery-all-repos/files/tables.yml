@@ -3,6 +3,7 @@
 - events
 - issue_labels
 - issues
+- issue_events
 - pr_commits
 - pull_request_reviews
 - pull_requests
