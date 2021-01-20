@@ -8,7 +8,7 @@ An example of the raw data can be pulled with curl command:
 curl https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2014-01-01&endtime=2014-01-02&minmagnitude=1
 ```
 
-[usgs map](https://articles.anelen.co/images/earthquakes.png)
+![usgs map](https://articles.anelen.co/images/earthquakes.png)
 (The image above, generated with the data in this article, is a map showing the location and magnitude (bubble size) of earthquakes on June 24, 2020, based on the USGS Earthquake event data.)
 
 Please see [tap-rest-api/README.md](https://github.com/anelendata/tap-rest-api)
