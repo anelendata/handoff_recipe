@@ -1,6 +1,6 @@
 {
-    "project_id": "replace-me",
-    "dataset_id": "usgs",
+    "project_id": "{{ gcp_project_id }}",
+    "dataset_id": "{{ dataset_id }}",
     "table_id": "earthquakes",
     "stream": false,
     "partition_by": "_sdc_batched_at",

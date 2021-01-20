@@ -5,7 +5,16 @@ installs:
 - venv: proc_01
   command: pip install tap-rest-api
 - venv: proc_02
-  command: "pip install install --no-cache-dir https://github.com/anelendata/target_bigquery/archive/94d0cf097de18d06be40ae5a35f5b31bda44f219.tar.gz#egg=target_bigquery"
+  command: pip install target-bigquery-partition
+
+vars:
+- key: gcp_project_id
+  value: "replace me!"
+- key: dataset_id
+  value: usgs
+- key: min_magnitude
+  description: Minimum magnitude filter. This is referred in files/tap_config.json
+  value: 1
 
 envs:
 - key: GOOGLE_APPLICATION_CREDENTIALS
@@ -16,22 +25,17 @@ tasks:
   description: Update schema and catalog for tap-rest-api to pull repos
   active: False  # Need to run only once locally to populate <project_dir>/flies
   commands:
-  - command: tap-rest-api
-    args: "--config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+  - command: "tap-rest-api --config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
     venv: proc_01
-  - command: cp
-    args: "files/schema/*.json ../files/schema/"
-  - command: cp
-    args: "files/catalog/*.json ../files/catalog/"
+  - command: "cp files/schema/*.json ../files/schema/"
+  - command: "cp files/catalog/*.json ../files/catalog/"
 
 - name: sync
   description: Do the sync
   pipeline:
-  - command: tap-rest-api
-    args: files/custom_spec.json --config files/tap_config.json --schema_dir files/schema --catalog_dir files/catalog --catalog files/catalog/earthquakes.json --start_datetime {{ start_datetime }} --end_datetime {{ end_datetime }}
+  - command: "tap-rest-api files/custom_spec.json --config files/tap_config.json --schema_dir files/schema --catalog_dir files/catalog --catalog files/catalog/earthquakes.json --start_datetime {{ start_datetime }} --end_datetime {{ end_datetime }}"
     venv: proc_01
-  - command: target_bigquery
-    args: --config files/target_config.json
+  - command: "target-bigquery --config files/target_config.json"
     venv: proc_02
 
 deploy:
@@ -42,9 +46,9 @@ deploy:
   task: usgs-earthquakes
 
 schedules:
-- target_id: "1"
+- target_id: 1
   description: Run everyday at 00:00:00Z
   envs:
   - key: __VARS
     value: 'start_datetime=$(date -Iseconds -d "00:00 yesterday") end_datetime=$(date -Iseconds -d "00:00 today")'
-  cron: '0 20 5 * ? *'  # 5th day of the month 12pm PST
+    cron: '0 0 * * ? *'
