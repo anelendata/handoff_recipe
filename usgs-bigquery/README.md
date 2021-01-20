@@ -47,7 +47,7 @@ Example deployment command sequence to AWS Fargate:
 
 ```
 export AWS_PROFILE=your-profile
-handof cloud create bucket --project . --stage prod
+handoff cloud create bucket --project . --stage prod
 handoff project push -p . -s prod
 handoff container build -p .
 handoff container push -p .
