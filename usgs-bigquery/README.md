@@ -9,7 +9,7 @@ curl https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2
 ```
 
 ![usgs map](https://articles.anelen.co/images/earthquakes.png)
-(The image above, generated with the data in this article, is a map showing the location and magnitude (bubble size) of earthquakes on June 24, 2020, based on the USGS Earthquake event data.)
+(The image above, generated with the data in this article, is a map showing the location and magnitude (bubble size) of earthquakes on June 24, 2020, based on the USGS Earthquake event data. From https://articles.anelen.co/elt-google-cloud-storage-bigquery )
 
 Please see [tap-rest-api/README.md](https://github.com/anelendata/tap-rest-api)
 for the details of the Singer.io tap part of this example.
