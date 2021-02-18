@@ -91,7 +91,7 @@ elif period == "month":
     interval = "1d"
 elif period == "week":
     start_date = today + datetime.timedelta(days=-today.weekday(), weeks=-1)
-    end_date = start_date + datetime.timedelta(days=4)
+    end_date = start_date + datetime.timedelta(days=5)
     interval = '90m'
     time_index = "Datetime"
     period_template = '%A, %B %d, %Y'
