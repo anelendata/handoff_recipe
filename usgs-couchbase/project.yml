@@ -1,0 +1,56 @@
+version: 0.3
+description: Fetch the earth quake data from USGS.gov and store in BigQuery
+
+installs:
+- venv: proc_01
+  command: pip3 install tap-rest-api
+- venv: proc_02
+  command: pip3 install --no-cache-dir couchbase
+- venv: proc_02
+  # command: pip3 install --no-cache-dir target-couchbase
+  command: pip3 install --no-cache-dir https://github.com/anelendata/target-couchbase/archive/eb5ae512fedb6f26b99a6954a8cdbcb33dd093da.tar.gz#egg=target-couchbase
+
+vars:
+- key: min_magnitude
+  description: Minimum magnitude filter. This is referred in files/tap_config.json
+  value: 1
+- key: cb_bucket
+  value: usgs
+  
+envs:
+- key: GOOGLE_APPLICATION_CREDENTIALS
+  value: files/google_client_secret.json
+
+tasks:
+- name: make_tap_rest_api_schema
+  description: Update schema and catalog for tap-rest-api to pull repos
+  active: False  # Need to run only once locally to populate <project_dir>/flies
+  commands:
+  - command: "tap-rest-api --config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+    venv: proc_01
+  - command: "cp files/schema/*.json ../files/schema/"
+  - command: "cp files/catalog/*.json ../files/catalog/"
+
+- name: sync
+  description: Do the sync
+  active: True
+  pipeline:
+  - command: "tap-rest-api files/custom_spec.json --config files/tap_config.json --schema_dir files/schema --catalog_dir files/catalog --catalog files/catalog/earthquakes.json --start_datetime {{ start_datetime }} --end_datetime {{ end_datetime }}"
+    venv: proc_01
+  - command: "target-couchbase --config files/target_config.json"
+    venv: proc_02
+
+deploy:
+  cloud_provider: aws
+  cloud_platform: fargate
+  resource_group: handoff-etl
+  container_image: tap-rest-api-target-couchbase
+  task: usgs-earthquakes-couchbase
+
+schedules:
+- target_id: 1
+  description: Run everyday at 00:00:00Z
+  envs:
+  - key: __VARS
+    value: 'start_datetime=$(date -d "1 hour ago" +"%Y-%m-%dT%H:00:00") end_datetime=$(date +"%Y-%m-%dT%H:00:00")'
+  cron: '0 * * * ? *'

@@ -1,0 +1,7 @@
+{
+    "cluster": "{{cb_cluster}}",
+    "username": "{{cb_username}}",
+    "password": "{{cb_password}}",
+    "bucket": "{{_stage_}}{{cb_bucket}}"
+}
+
