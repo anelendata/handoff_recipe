@@ -1,0 +1,12 @@
+{
+  "url": "https://{{ domain }}.atlassian.net/rest/agile/1.0/board/{custom_id}/sprint?maxResults=50&startAt={current_offset}",
+  "schema": "jira_sprints",
+  "auth_method": "basic",
+  "username": "{{ username }}",
+  "password": "{{ token }}",
+  "index_key": "id",
+  "start_index": 0,
+  "record_list_level": "values",
+  "items_per_page": 1,
+  "filter_by_schema": true
+}

@@ -1,0 +1,11 @@
+{
+  "url": "https://{{ domain }}.atlassian.net/rest/agile/1.0/sprint/{custom_id}/issue?maxResults=500&startAt={current_offset}",
+  "schema": "jira_issues",
+  "auth_method": "basic",
+  "username": "{{ username }}",
+  "password": "{{ token }}",
+  "index_key": "id",
+  "start_index": 0,
+  "record_list_level": "issues",
+  "items_per_page": 1
+}

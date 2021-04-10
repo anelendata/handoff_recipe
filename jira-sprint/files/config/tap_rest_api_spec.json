@@ -1,0 +1,10 @@
+{
+    "args": {
+        "custom_id":
+        {
+            "type": "string",
+            "default": "",
+            "help": "An ID string to pass on"
+        }
+    }
+}

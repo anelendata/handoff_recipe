@@ -17,10 +17,6 @@ vars:
 - key: cb_bucket
   value: usgs
   
-envs:
-- key: GOOGLE_APPLICATION_CREDENTIALS
-  value: files/google_client_secret.json
-
 tasks:
 - name: make_tap_rest_api_schema
   description: Update schema and catalog for tap-rest-api to pull repos

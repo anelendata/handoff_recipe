@@ -1,0 +1,11 @@
+{
+  "url": "https://{{ domain }}.atlassian.net/rest/agile/1.0/board?&maxResults=100&startAt={current_offset}",
+  "schema": "jira_boards",
+  "auth_method": "basic",
+  "username": "{{ username }}",
+  "password": "{{ token }}",
+  "index_key": "id",
+  "start_index": 0,
+  "record_list_level": "values",
+  "items_per_page": 1
+}

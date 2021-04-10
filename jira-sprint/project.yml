@@ -1,0 +1,131 @@
+version: 0.3.0
+
+description: Sync all the issues from all the Sprints from all the JIRA Boards
+
+installs:
+- venv: proc_01
+  command: pip install tap-rest-api
+- venv: proc_02
+  command: pip install target-bigquery-partition
+
+envs:
+- key: SPRINT_SCHEMA_DIR
+  # For daily sync: active or future sprint only
+  value: ./files/schema/filter_closed
+  # Turn this on to do full historical sync
+  # value: files/schema
+  # Turn this on to do historical sync since 2019
+  # value: ./files/schema/filter_pre_2019
+- key: GOOGLE_APPLICATION_CREDENTIALS
+  value: files/config/google_client_secret.json
+
+vars:
+- key: domain
+  value: <your-domain>
+- key: gcp_project_id
+  value: <your-gcp-project-id>
+- key: dataset_id
+  value: <your-dataset-id>
+- key: tmp_dir
+  value: /tmp/jira-sprint
+- key: board_id_file
+  value: /tmp/jira-sprint/board_ids
+- key: sprint_record_file
+  value: /tmp/jira-sprint/sprint_records.json
+- key: sprint_ids
+  value: /tmp/jira-sprint/sprint_ids
+# Used by infer_schema task only
+- key: sample_board_id
+  value: <integer-id>
+- key: sample_sprint_id
+  value: <integer-id>
+
+tasks:
+- name: make_schemas
+  description: Run this pipeline locally just once to make schema and catalog files. Then do handoff files push to push the schema files
+  active: False
+  tasks:
+  - name: board_schema
+    commands:
+    - command: tap-rest-api --config files/config/tap_config_board.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema
+      venv: proc_01
+      description: Making schema for Jira Boards
+    - command: "tap-rest-api files/config/tap_rest_api_spec.json --config files/config/tap_config_sprint.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema --custom_id {{ sample_board_id }}"
+      venv: proc_01
+      description: Making schema for Jira Sprints
+    - command: "tap-rest-api files/config/tap_rest_api_spec.json --config files/config/tap_config_issue.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema --custom_id {{ sample_sprint_id }}"
+      venv: proc_01
+      description: Making schema for Jira Issues
+  - name: copy_schemas
+    commands:
+    - command: cp -fr files/catalog ../files/catalog
+    - command: cp -fr files/schema ../files/schema
+
+- name: init_tmp
+  description: Clean up the tmp directory for the run
+  commands:
+  - command: "mkdir -p {{ tmp_dir }}"
+  - command: 'rm -fr {{ tmp_dir }}/*'
+
+- name: get_board_ids
+  description: Dump unique board ID file
+  pipeline:
+  - command: tap-rest-api --config files/config/tap_config_board.json --schema_dir files/schema --catalog files/catalog/jira_boards.json
+    venv: proc_01
+  - command: python files/transformer/extract_board_ids.py
+    venv: proc_01
+  - command: "cat > {{ board_id_file }}"
+
+- name: fetch_all_sprints
+  description: For each board ID, fetch Sprints
+  pipeline:
+  - command: "cat {{ board_id_file }} | sort | uniq"
+  - foreach:
+    - name: sync_sprint
+      pipeline:
+      - command: "tap-rest-api files/config/tap_rest_api_spec.json --config files/config/tap_config_sprint.json --schema_dir $SPRINT_SCHEMA_DIR --catalog files/catalog/jira_sprints.json --custom_id {{ _line }}"
+        venv: proc_01
+        description: board ID is passed as custom_id
+      - command: "cat >> {{ sprint_record_file }}"
+
+- name: upload_sprints
+  description: Uplaod sprint to BigQuery. Also extract Sprint IDs
+  pipeline:
+    - command: "cat {{ sprint_record_file }}"
+    - fork:
+      - name: upload_to_bigquery
+        pipeline:
+        - command: "target-bigquery --config files/config/target_config_sprint.json"
+          venv: proc_02
+      - name: extract_sprint_ids
+        pipeline:
+        - command: "python files/transformer/extract_sprint_ids.py"
+          venv: proc_01
+        - command: "cat > {{ sprint_ids }}"
+
+- name: sync_issues
+  description: For each Sprint IDs, get all the associated issues and save in BigQuery
+  pipeline:
+  - command: "cat {{ sprint_ids }} | sort | uniq"
+  - foreach:
+    - name: sync_issues
+      pipeline:
+      - command: "tap-rest-api files/config/tap_rest_api_spec.json --config files/config/tap_config_issue.json --schema_dir files/schema --catalog files/catalog/jira_issues.json --custom_id {{ _line }}"
+        venv: proc_01
+      - command: "python files/transformer/clean_issues.py"
+        venv: proc_01
+      - command: "target-bigquery --config files/config/target_config_issue.json"
+        venv: proc_02
+
+deploy:
+  provider: aws
+  platform: fargate
+  resource_group: handoff-etl
+  container_image: tap-rest-api-target-bigquery
+  task: jira-all-sprint-issues-to-bigquery
+
+schedules:
+- cron: '0 0 * * ? *'
+  description: Run everyday at 0am UTC
+  envs: []
+  target_id: 1

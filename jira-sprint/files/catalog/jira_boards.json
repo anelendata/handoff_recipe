@@ -1,0 +1,102 @@
+{
+  "streams": [
+    {
+      "stream": "jira_boards",
+      "tap_stream_id": "jira_boards",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "integer"
+            ]
+          },
+          "self": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "location": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "projectId": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "displayName": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "projectName": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "projectKey": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "projectTypeKey": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "avatarURI": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "_sdc_extracted_at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "_sdc_batched_at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "selected": true
+      }
+    }
+  ]
+}
