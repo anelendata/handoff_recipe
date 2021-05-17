@@ -10,11 +10,11 @@ installs:
 
 envs:
 - key: SPRINT_SCHEMA_DIR
-  # For daily sync: active or future sprint only
-  value: ./files/schema/filter_closed
   # Turn this on to do full historical sync
-  # value: files/schema
-  # Turn this on to do historical sync since 2019
+  value: files/schema
+  # For daily sync: active or future sprint only
+  # value: ./files/schema/filter_closed
+  # Example: Turn this on to do historical sync since 2019
   # value: ./files/schema/filter_pre_2019
 - key: GOOGLE_APPLICATION_CREDENTIALS
   value: files/config/google_client_secret.json

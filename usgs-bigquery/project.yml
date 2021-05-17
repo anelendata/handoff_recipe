@@ -9,7 +9,7 @@ installs:
 
 vars:
 - key: gcp_project_id
-  value: "replace me!"
+  value: "<your-gcp-project-id>"
 - key: dataset_id
   value: usgs
 - key: min_magnitude
@@ -51,4 +51,4 @@ schedules:
   envs:
   - key: __VARS
     value: 'start_datetime=$(date -Iseconds -d "00:00 yesterday") end_datetime=$(date -Iseconds -d "00:00 today")'
-    cron: '0 0 * * ? *'
+  cron: '0 0 * * ? *'
