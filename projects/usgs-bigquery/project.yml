@@ -46,9 +46,16 @@ deploy:
   task: usgs-earthquakes
 
 schedules:
-- target_id: 1
+- target_id: daily
   description: Run everyday at 00:00:00Z
   envs:
   - key: __VARS
     value: 'start_datetime=$(date -Iseconds -d "00:00 yesterday") end_datetime=$(date -Iseconds -d "00:00 today")'
   cron: '0 0 * * ? *'
+
+- target_id: hourly
+  description: Run hour
+  envs:
+  - key: __VARS
+    value: 'start_datetime=$(date -Ihours -d "1 hour ago") end_datetime=$(date -Ihours)'
+  cron: '0 * * * ? *'
