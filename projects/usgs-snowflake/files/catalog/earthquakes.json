@@ -1,0 +1,230 @@
+{
+  "streams": [
+    {
+      "stream": "earthquakes",
+      "tap_stream_id": "earthquakes",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "properties": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "mag": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "place": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "time": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "updated": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "tz": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "url": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "detail": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "felt": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "cdi": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "mmi": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "alert": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "status": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "tsunami": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "sig": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "net": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "code": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "ids": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "sources": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "types": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "nst": {
+                "type": [
+                  "null",
+                  "integer"
+                ]
+              },
+              "dmin": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "rms": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "gap": {
+                "type": [
+                  "null",
+                  "number"
+                ]
+              },
+              "magType": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "type": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "title": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          "geometry": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "properties": {
+              "type": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              },
+              "coordinates": {
+                "type": [
+                  "null",
+                  "array"
+                ],
+                "items": {
+                  "type": [
+                    "null",
+                    "number"
+                  ]
+                }
+              }
+            }
+          },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "_sdc_extracted_at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "_sdc_batched_at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "selected": true
+      }
+    }
+  ]
+}

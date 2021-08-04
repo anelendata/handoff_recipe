@@ -1,0 +1,74 @@
+version: 0.3
+description: Fetch the earth quake data from USGS.gov and store in Snowflake
+
+installs:
+- venv: proc_01
+  # command: pip install tap-rest-api
+  command: "pip install --no-cache-dir https://github.com/anelendata/tap-rest-api/archive/10fa3c37c8976a3779895c5bea10e32de05b3ae8.tar.gz#egg=tap-rest-api"
+- venv: proc_02
+  command: pip install target-snowflake
+
+vars:
+- key: min_magnitude
+  description: Minimum magnitude filter. This is referred in files/tap_config.json
+  value: 1
+- key: snowflake_warehouse
+  value: HANDOFF_DEMO
+- key: snowflake_database
+  value: HANDOFF_DEMO
+- key: snowflake_schema
+  value: USGS
+
+secrets:
+- key: snowflake_url
+  level: task
+- key: snowflake_username
+  level: task
+- key: snowflake_role
+  level: task
+- key: snowflake_password
+  level: task
+
+tasks:
+- name: record_ip
+  commands:
+  - command: "curl ifconfig.me"
+
+- name: make_tap_rest_api_schema
+  description: Update schema and catalog for tap-rest-api to pull repos
+  active: False  # Need to run only once locally to populate <project_dir>/flies
+  commands:
+  - command: "tap-rest-api --config files/tap_config_repo.json --schema_dir files/schema --catalog_dir files/catalog --infer_schema"
+    venv: proc_01
+  - command: "cp files/schema/*.json ../files/schema/"
+  - command: "cp files/catalog/*.json ../files/catalog/"
+
+- name: sync
+  description: Do the sync
+  pipeline:
+  - command: "tap-rest-api files/custom_spec.json --config files/tap_config.json --schema_dir files/schema --catalog_dir files/catalog --catalog files/catalog/earthquakes.json --start_datetime {{ start_datetime }} --end_datetime {{ end_datetime }}"
+    venv: proc_01
+  - command: "target-snowflake --config files/target_config.json"
+    venv: proc_02
+
+deploy:
+  cloud_provider: aws
+  cloud_platform: fargate
+  resource_group: handoff-etl
+  container_image: tap-rest-api-target-snowflake
+  task: usgs-earthquakes-snowflake
+
+schedules:
+- target_id: daily
+  description: Run everyday at 00:00:00Z
+  envs:
+  - key: __VARS
+    value: 'start_datetime=$(date -Iseconds -d "00:00 yesterday") end_datetime=$(date -Iseconds -d "00:00 today")'
+  cron: '0 0 * * ? *'
+
+- target_id: hourly
+  description: Run hour
+  envs:
+  - key: __VARS
+    value: 'start_datetime=$(date -Ihours -d "1 hour ago") end_datetime=$(date -Ihours)'
+  cron: '0 * * * ? *'
