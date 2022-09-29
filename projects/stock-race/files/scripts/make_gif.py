@@ -207,4 +207,4 @@ logo = (mp.ImageClip("files/logo.png")
 
 final = mp.CompositeVideoClip([video, logo])
 final.write_gif("artifacts/stock.gif")
-# final.write_videofile("test_new.mp4")
+final.write_videofile("artifacts/stock.mp4")

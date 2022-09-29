@@ -1,4 +1,5 @@
-version: 0.3
+version: 0.4.0
+
 description: Create stock barchart race and post on Twitter
 
 installs:
@@ -23,6 +24,22 @@ installs:
 - venv: base
   command: pip install moviepy
 
+secrets:
+- key: twitter_access_secret
+  level: task
+- key: twitter_access_token
+  level: task
+- key: twitter_api_key
+  level: task
+- key: twitter_api_secret
+  level: task
+- key: twitter_bearer_token
+  level: task
+- key: linkedin_oauth_token
+  level: task
+- key: linkedin_user_id
+  level: task
+
 tasks:
 - name: install
   commands:
@@ -38,25 +55,27 @@ tasks:
   - venv: base
     command: python
     args: files/scripts/make_gif.py
-  - command: cat
-    args: "> artifacts/make_gif_stdout.log"
 
 - name: tweet
   pipeline:
   - command: python
     venv: base
     args: files/scripts/tweet.py
-  - command: cat
-    args: "> artifacts/tweet_stdout.log"
+
+- name: linkedin
+  pipeline:
+  - venv: base
+  - command: "python files/scripts/linkedin.py artifacts/stock.mp4 'Automatically post a data-driven content on LinkedIn'"
 
 deploy:
   provider: aws
   platform: fargate
-  resource_group: anelen-etl
+  resource_group: etl
   # Docker image name
   container_image: social-media-data-viz
   # Fargate task name
   task: "stock-barchart-race-weely"
+
 
 schedules:
 - target_id: "1"
